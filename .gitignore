@@ -1,3 +1,7 @@
 node_modules/
 build/
 .claude/
+.env
+server/.env
+server/database.sqlite
+server/dist/

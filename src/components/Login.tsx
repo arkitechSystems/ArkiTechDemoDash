@@ -17,21 +17,24 @@ const Login: React.FC = () => {
     setError('');
     setIsLoading(true);
 
-    // Simulate loading for better UX
-    setTimeout(() => {
-      if (!username || !password) {
-        setError('Please enter both username and password');
-        setIsLoading(false);
-        return;
-      }
+    if (!username || !password) {
+      setError('Please enter both username and password');
+      setIsLoading(false);
+      return;
+    }
 
-      const success = login(username, password);
+    try {
+      const success = await login(username, password);
       if (!success) {
         setError('Invalid username or password');
         setPassword('');
       }
+    } catch (error) {
+      setError('An error occurred. Please try again.');
+      console.error('Login error:', error);
+    } finally {
       setIsLoading(false);
-    }, 500);
+    }
   };
 
   return (
@@ -58,7 +61,7 @@ const Login: React.FC = () => {
               <input
                 id="username"
                 type="text"
-                placeholder="Concho1"
+                placeholder=""
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 className="form-input"
@@ -74,7 +77,7 @@ const Login: React.FC = () => {
               <input
                 id="password"
                 type="password"
-                placeholder="••••••••"
+                placeholder=""
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="form-input"

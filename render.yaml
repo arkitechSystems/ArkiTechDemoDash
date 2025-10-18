@@ -1,0 +1,32 @@
+services:
+  # Backend API Service
+  - type: web
+    name: cchddash-api
+    env: node
+    region: oregon
+    plan: free
+    buildCommand: cd server && npm install && npm run build
+    startCommand: cd server && npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        generateValue: true
+      - key: PORT
+        value: 3001
+
+  # Frontend Static Site
+  - type: web
+    name: cchddash-frontend
+    env: static
+    region: oregon
+    plan: free
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./build
+    envVars:
+      - key: REACT_APP_API_URL
+        value: https://cchddash-api.onrender.com
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
