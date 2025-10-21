@@ -257,6 +257,48 @@
   transform: translateY(0);
 }
 
+/* Password Input Wrapper */
+.password-input-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.password-input {
+  padding-right: 3rem;
+}
+
+.password-toggle-button {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(15, 32, 39, 0.5);
+  transition: all 0.3s ease;
+  border-radius: 6px;
+  z-index: 2;
+}
+
+.password-toggle-button:hover {
+  color: #1abc9c;
+  background: rgba(26, 188, 156, 0.1);
+  transform: translateY(-50%) scale(1.1);
+}
+
+.password-toggle-button:active {
+  transform: translateY(-50%) scale(0.95);
+}
+
+.password-toggle-button svg {
+  display: block;
+}
+
 .form-input::placeholder {
   color: rgba(15, 32, 39, 0.4);
   transition: all 0.3s ease;
@@ -370,6 +412,47 @@
 }
 
 /* Forgot Password Link */
+.login-links {
+  text-align: center;
+  margin-top: 1.75rem;
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.login-links a {
+  color: #666;
+  font-size: 0.875rem;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  position: relative;
+  padding-bottom: 2px;
+  font-weight: 500;
+}
+
+.login-links a::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #1abc9c, transparent);
+  transition: width 0.3s ease;
+}
+
+.login-links a:hover {
+  color: #1abc9c;
+}
+
+.login-links a:hover::after {
+  width: 100%;
+}
+
+/* Legacy support */
 .forgot-password {
   text-align: center;
   margin-top: 1.75rem;
@@ -536,4 +619,50 @@
   border-top-color: white;
   border-radius: 50%;
   animation: spin 0.6s linear infinite;
+}
+
+/* MFA Input Section */
+.mfa-input-section {
+  background: rgba(26, 188, 156, 0.05);
+  border: 1px solid rgba(26, 188, 156, 0.2);
+  border-radius: 12px;
+  padding: 1.25rem;
+  margin-top: 0.5rem;
+  animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.mfa-toggle-button {
+  margin-top: 0.75rem;
+  padding: 0.625rem 1rem;
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(26, 188, 156, 0.3);
+  border-radius: 8px;
+  color: #1abc9c;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  width: 100%;
+}
+
+.mfa-toggle-button:hover {
+  background: rgba(26, 188, 156, 0.1);
+  border-color: #1abc9c;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(26, 188, 156, 0.2);
+}
+
+.mfa-toggle-button:active {
+  transform: translateY(0);
 }

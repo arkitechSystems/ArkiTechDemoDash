@@ -1,0 +1,201 @@
+.screensaver-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  animation: fadeIn 0.3s ease-in-out;
+  cursor: pointer;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.screensaver-content {
+  text-align: center;
+  color: white;
+  cursor: default;
+  max-width: 450px;
+  padding: 40px;
+}
+
+.screensaver-logo {
+  margin-bottom: 30px;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.screensaver-logo img {
+  height: 80px;
+  opacity: 0.9;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.9;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 1;
+  }
+}
+
+.screensaver-content h2 {
+  font-size: 32px;
+  margin-bottom: 10px;
+  font-weight: 600;
+  background: linear-gradient(90deg, #ffffff, #00d4ff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.screensaver-username {
+  font-size: 18px;
+  margin-bottom: 30px;
+  opacity: 0.9;
+  font-weight: 500;
+}
+
+.screensaver-form {
+  margin-bottom: 30px;
+}
+
+.screensaver-input {
+  width: 100%;
+  padding: 15px 20px;
+  font-size: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  margin-bottom: 15px;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+}
+
+.screensaver-input::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.screensaver-input:focus {
+  outline: none;
+  border-color: #00d4ff;
+  background: rgba(255, 255, 255, 0.15);
+  box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+}
+
+.screensaver-input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.screensaver-error {
+  color: #ff6b6b;
+  margin-bottom: 15px;
+  font-size: 14px;
+  padding: 10px;
+  background: rgba(255, 107, 107, 0.1);
+  border-radius: 6px;
+  border: 1px solid rgba(255, 107, 107, 0.3);
+}
+
+.screensaver-button {
+  width: 100%;
+  padding: 15px;
+  font-size: 16px;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #00d4ff, #0099cc);
+  color: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.screensaver-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 212, 255, 0.4);
+}
+
+.screensaver-button:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.screensaver-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.screensaver-warning {
+  margin-bottom: 20px;
+  padding: 15px;
+  background: rgba(255, 193, 7, 0.1);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 193, 7, 0.3);
+}
+
+.screensaver-warning p {
+  margin: 0;
+  color: #ffc107;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.screensaver-warning small {
+  font-size: 13px;
+  opacity: 0.8;
+}
+
+.screensaver-expired {
+  color: #ff6b6b !important;
+  font-weight: 600 !important;
+}
+
+.screensaver-hint {
+  font-size: 14px;
+  opacity: 0.6;
+  animation: fadeInOut 2s ease-in-out infinite;
+}
+
+@keyframes fadeInOut {
+  0%, 100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .screensaver-content {
+    padding: 30px 20px;
+    max-width: 90%;
+  }
+
+  .screensaver-logo img {
+    height: 60px;
+  }
+
+  .screensaver-content h2 {
+    font-size: 24px;
+  }
+
+  .screensaver-username {
+    font-size: 16px;
+  }
+}
