@@ -7,6 +7,8 @@ interface LoginResult {
   mfaEnabled?: boolean;
   firstLogin?: boolean;
   passwordResetRequired?: boolean;
+  error?: string;
+  errorType?: 'auth' | 'server' | 'network';
 }
 
 interface AuthContextType {
@@ -145,6 +147,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }),
       });
 
+      // Check for server errors (404, 500, etc.)
+      if (response.status === 404) {
+        return {
+          success: false,
+          error: 'Server Error: Backend service not found. Please check server configuration.',
+          errorType: 'server'
+        };
+      }
+
+      if (response.status >= 500) {
+        return {
+          success: false,
+          error: 'Server Error: Backend service is experiencing issues. Please try again later.',
+          errorType: 'server'
+        };
+      }
+
       const data = await response.json();
 
       if (response.ok) {
@@ -174,11 +193,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           passwordResetRequired: data.passwordResetRequired || false
         };
       } else {
-        return { success: false };
+        // Authentication failure (401, 403, etc.)
+        return {
+          success: false,
+          error: 'Invalid username or password',
+          errorType: 'auth'
+        };
       }
     } catch (error) {
       console.error('Login error:', error);
-      return { success: false };
+
+      // Network error (server not running, no internet, etc.)
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        return {
+          success: false,
+          error: 'Server Error: Cannot connect to backend server. Please ensure the server is running.',
+          errorType: 'network'
+        };
+      }
+
+      return {
+        success: false,
+        error: 'An unexpected error occurred. Please try again.',
+        errorType: 'network'
+      };
     }
   };
 

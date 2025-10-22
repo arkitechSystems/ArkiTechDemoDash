@@ -49,16 +49,24 @@ const Login: React.FC = () => {
       }
 
       if (!result.success) {
-        if (showMFAInput) {
+        // Use the specific error message and type from the login result
+        if (result.error) {
+          setError(result.error);
+        } else if (showMFAInput) {
           setError('Invalid MFA code. Please try again.');
           setMfaToken('');
         } else {
           setError('Invalid username or password');
           setPassword('');
         }
+
+        // Only clear password for authentication errors, not server errors
+        if (result.errorType === 'auth' && !showMFAInput) {
+          setPassword('');
+        }
       }
     } catch (error) {
-      setError('An error occurred. Please try again.');
+      setError('An unexpected error occurred. Please try again.');
       console.error('Login error:', error);
     } finally {
       setIsLoading(false);
