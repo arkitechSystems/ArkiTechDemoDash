@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
+import { API_ENDPOINTS } from '../config';
 
 const SubmitTicket: React.FC = () => {
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
   const [ticketNumber, setTicketNumber] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const generateTicketNumber = () => {
     // Generate a random 6-digit ticket number
@@ -20,33 +22,52 @@ const SubmitTicket: React.FC = () => {
     }
 
     setIsSubmitting(true);
+    setError(null);
     const newTicketNumber = generateTicketNumber();
 
-    // Create mailto link with ticket information
-    const emailSubject = encodeURIComponent(`Support Ticket #${newTicketNumber}: ${subject}`);
-    const emailBody = encodeURIComponent(
-      `Ticket Number: ${newTicketNumber}\n\n` +
-      `Subject: ${subject}\n\n` +
-      `Message:\n${message}\n\n` +
-      `---\n` +
-      `Submitted from Financial Dashboard\n` +
-      `Date: ${new Date().toLocaleString()}`
-    );
+    try {
+      // Get auth token from localStorage
+      const token = localStorage.getItem('token');
 
-    // Open email client
-    window.location.href = `mailto:arkitechcloud@gmail.com?subject=${emailSubject}&body=${emailBody}`;
+      if (!token) {
+        throw new Error('Authentication required. Please log in again.');
+      }
 
-    // Set ticket number after a brief delay to show success
-    setTimeout(() => {
+      // Send ticket to backend
+      const response = await fetch(API_ENDPOINTS.SUBMIT_TICKET, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          ticketNumber: newTicketNumber,
+          subject,
+          message
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to submit ticket');
+      }
+
+      // Success - show ticket number
       setTicketNumber(newTicketNumber);
+    } catch (err: any) {
+      console.error('Ticket submission error:', err);
+      setError(err.message || 'Failed to submit ticket. Please try again.');
+    } finally {
       setIsSubmitting(false);
-    }, 500);
+    }
   };
 
   const handleNewTicket = () => {
     setTicketNumber(null);
     setSubject('');
     setMessage('');
+    setError(null);
   };
 
   if (ticketNumber) {
@@ -142,6 +163,22 @@ const SubmitTicket: React.FC = () => {
           Having issues with the dashboard? Need help with data updates or encountering errors?
           Submit a support ticket and our team will assist you as soon as possible.
         </p>
+
+        {error && (
+          <div style={{
+            padding: '12px 16px',
+            background: '#fee',
+            border: '1px solid #e74c3c',
+            borderRadius: '8px',
+            marginBottom: '24px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}>
+            <span className="material-icons" style={{ color: '#e74c3c', fontSize: '20px' }}>error</span>
+            <span style={{ color: '#c0392b', fontSize: '14px' }}>{error}</span>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit}>
           <div style={{ marginBottom: '24px' }}>

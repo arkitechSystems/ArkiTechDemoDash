@@ -171,6 +171,14 @@ The SQLite database is stored in `server/database.sqlite`. On Render's free tier
 - bcryptjs
 - CORS
 
+## User Management
+
+For detailed instructions on adding users and resetting passwords, see [USER_MANAGEMENT.md](USER_MANAGEMENT.md).
+
+Quick commands:
+- **Add user**: `cd server && npm run create-user <username> <password> [email]`
+- **Reset password**: `cd server && npm run reset-password <username> <new-password>`
+
 ## Support
 
 For issues or questions, contact ArkiTech Systems.

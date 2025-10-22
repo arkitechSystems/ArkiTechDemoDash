@@ -35,7 +35,10 @@
     "eject": "react-scripts eject",
     "server": "cd server && npm run dev",
     "server:build": "cd server && npm run build",
-    "server:start": "cd server && npm start"
+    "server:start": "cd server && npm start",
+    "update-metadata": "node update-metadata.js",
+    "watch-gldet": "node watch-gldet.js",
+    "generate-certs": "node generate-certificates.js"
   },
   "eslintConfig": {
     "extends": [
@@ -54,5 +57,8 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "chokidar": "^4.0.3"
   }
 }

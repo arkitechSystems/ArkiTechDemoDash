@@ -1,6 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '../contexts/AuthContext';
+import MFASetup from './MFASetup';
+import { API_ENDPOINTS } from '../config';
 
 const MyAccount: React.FC = () => {
+  const { mfaEnabled: authMfaEnabled } = useAuth();
   const [formData, setFormData] = useState({
     firstName: 'Current',
     lastName: 'User',
@@ -13,13 +17,15 @@ const MyAccount: React.FC = () => {
     organizationName: 'Memorial Healthcare',
     facilityCode: 'MHC-001',
     defaultReportingUnit: 'Main Campus',
-    twoFactorEnabled: false,
     emailNotifications: true,
     smsNotifications: false,
   });
 
   const [isEditing, setIsEditing] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [showMFASetup, setShowMFASetup] = useState(false);
+  const [mfaStatus, setMfaStatus] = useState<any>(null);
+  const [loadingMFA, setLoadingMFA] = useState(false);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -29,11 +35,89 @@ const MyAccount: React.FC = () => {
     }));
   };
 
-  const handleToggle2FA = () => {
-    setFormData(prev => ({
-      ...prev,
-      twoFactorEnabled: !prev.twoFactorEnabled
-    }));
+  // Fetch MFA status on load
+  useEffect(() => {
+    const fetchMFAStatus = async () => {
+      try {
+        const token = localStorage.getItem('authToken');
+        if (!token) return;
+
+        const response = await fetch(`${API_ENDPOINTS.BASE_URL}/mfa/status`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setMfaStatus(data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch MFA status:', error);
+      }
+    };
+
+    fetchMFAStatus();
+  }, []);
+
+  const handleEnableMFA = () => {
+    setShowMFASetup(true);
+  };
+
+  const handleDisableMFA = async () => {
+    if (!window.confirm('Are you sure you want to disable MFA? This will make your account less secure.')) {
+      return;
+    }
+
+    const password = window.prompt('Please enter your password to confirm:');
+    if (!password) return;
+
+    setLoadingMFA(true);
+    try {
+      const token = localStorage.getItem('authToken');
+      const response = await fetch(`${API_ENDPOINTS.BASE_URL}/mfa/disable`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ password })
+      });
+
+      if (response.ok) {
+        setMfaStatus(null);
+        alert('MFA has been disabled successfully.');
+        window.location.reload();
+      } else {
+        const error = await response.json();
+        alert(`Failed to disable MFA: ${error.error}`);
+      }
+    } catch (error) {
+      console.error('Failed to disable MFA:', error);
+      alert('An error occurred while disabling MFA.');
+    } finally {
+      setLoadingMFA(false);
+    }
+  };
+
+  const handleMFASetupComplete = () => {
+    setShowMFASetup(false);
+    // Refresh MFA status
+    const fetchStatus = async () => {
+      try {
+        const token = localStorage.getItem('authToken');
+        const response = await fetch(`${API_ENDPOINTS.BASE_URL}/mfa/status`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setMfaStatus(data);
+        }
+      } catch (error) {
+        console.error('Failed to refresh MFA status:', error);
+      }
+    };
+    fetchStatus();
   };
 
   const handleToggleEmailNotifications = () => {
@@ -317,22 +401,40 @@ const MyAccount: React.FC = () => {
             </div>
             <div className="security-item">
               <div className="security-info">
-                <h3>Two-Factor Authentication (2FA)</h3>
-                <p>Add an extra layer of security to your account</p>
+                <h3>Multi-Factor Authentication (MFA)</h3>
+                <p>Add an extra layer of security to your account with authenticator app or email codes</p>
+                {mfaStatus?.enabled && (
+                  <div className="mfa-status-details">
+                    <p style={{ fontSize: '0.9em', marginTop: '8px', color: '#27ae60' }}>
+                      <strong>Status:</strong> Enabled ({mfaStatus.method === 'app' ? 'Authenticator App' : 'Email'})
+                    </p>
+                    {mfaStatus.backupCodesRemaining !== undefined && (
+                      <p style={{ fontSize: '0.9em', color: '#7f8c8d' }}>
+                        <strong>Backup Codes:</strong> {mfaStatus.backupCodesRemaining} remaining
+                      </p>
+                    )}
+                  </div>
+                )}
               </div>
-              <div className="toggle-container">
-                <label className="toggle-switch">
-                  <input
-                    type="checkbox"
-                    checked={formData.twoFactorEnabled}
-                    onChange={handleToggle2FA}
-                  />
-                  <span className="toggle-slider"></span>
-                </label>
-                <span className={`toggle-status ${formData.twoFactorEnabled ? 'enabled' : 'disabled'}`}>
-                  {formData.twoFactorEnabled ? 'Enabled' : 'Disabled'}
-                </span>
-              </div>
+              {!mfaStatus?.enabled ? (
+                <button
+                  className="btn-primary"
+                  onClick={handleEnableMFA}
+                  disabled={loadingMFA}
+                >
+                  <span className="material-icons">security</span>
+                  Enable MFA
+                </button>
+              ) : (
+                <button
+                  className="btn-secondary"
+                  onClick={handleDisableMFA}
+                  disabled={loadingMFA}
+                >
+                  <span className="material-icons">lock_open</span>
+                  Disable MFA
+                </button>
+              )}
             </div>
           </div>
         </section>
@@ -384,6 +486,14 @@ const MyAccount: React.FC = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* MFA Setup Modal */}
+      {showMFASetup && (
+        <MFASetup
+          onComplete={handleMFASetupComplete}
+          onCancel={() => setShowMFASetup(false)}
+        />
       )}
     </div>
   );

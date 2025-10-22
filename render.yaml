@@ -25,7 +25,7 @@ services:
     staticPublishPath: ./build
     envVars:
       - key: REACT_APP_API_URL
-        value: https://cchddash-api.onrender.com
+        value: https://api.connect301.arkitech-test.xyz
     routes:
       - type: rewrite
         source: /*

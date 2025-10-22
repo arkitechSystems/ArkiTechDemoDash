@@ -41,7 +41,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [timeUntilLogout, setTimeUntilLogout] = useState<number>(540); // 9 minutes in seconds (10 min total - 1 min before screensaver)
   const [lastActivity, setLastActivity] = useState<number>(Date.now());
 
-  // Inactivity tracking - show screensaver after 1 minute, logout after 10 minutes
+  // Inactivity tracking
   useEffect(() => {
     if (!isAuthenticated) return;
 

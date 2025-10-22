@@ -32,7 +32,7 @@ import { API_ENDPOINTS } from './config';
 
 type PageType = 'dashboard' | 'income-two' | 'balance-trend' | 'balance-activity' | 'settings' | 'test-trend' | 'mva' | 'impact-preview' | 'projections-imp' | 'user-guide' | 'pro-forma' | 'gl-transactions' | 'upcoming-modules' | 'my-account' | 'monthly-report-options' | 'submit-ticket';
 
-type AccountingPageType = 'close-checklist' | 'journal-entries' | 'recon-checklist' | 'reconciliations';
+type AccountingPageType = 'close-checklist' | 'journal-entries' | 'recon-checklist' | 'reconciliations' | 'chart-of-accounts';
 
 function AppContent() {
   const { isAuthenticated, firstLogin, passwordResetRequired, completeFirstLogin, showScreensaver, timeUntilLogout, dismissScreensaver } = useAuth();

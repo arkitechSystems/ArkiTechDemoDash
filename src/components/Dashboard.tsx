@@ -99,6 +99,14 @@ const Dashboard: React.FC = () => {
   const [isPatientDaysExpanded, setIsPatientDaysExpanded] = useState<boolean>(false);
   const [isSurgeriesExpanded, setIsSurgeriesExpanded] = useState<boolean>(false);
   const [isERVisitsExpanded, setIsERVisitsExpanded] = useState<boolean>(false);
+  const [fullScreenChart, setFullScreenChart] = useState<string | null>(null);
+  const [revenueByType, setRevenueByType] = useState<Array<{name: string, value: number, percentage: number, color: string}>>([
+    { name: 'Inpatient', value: 0, percentage: 0, color: '#1abc9c' },
+    { name: 'Outpatient', value: 0, percentage: 0, color: '#3498db' },
+    { name: 'Swing Bed', value: 0, percentage: 0, color: '#e74c3c' },
+    { name: 'Retail Pharmacy', value: 0, percentage: 0, color: '#f39c12' }
+  ]);
+  const [expenseByType, setExpenseByType] = useState<Array<{name: string, value: number, percentage: number, color: string}>>([]);
 
   // Calculate revenue change percentage
   const revenueChange = ((totalRevenue - lastMonthRevenue) / lastMonthRevenue) * 100;
@@ -161,10 +169,7 @@ const Dashboard: React.FC = () => {
     { value: '2025-09', label: 'Sep 2025', meValue: 45930 }
   ];
 
-  useEffect(() => {
-    const currentDate = new Date();
-    setLastUpdated(`(v1.1) Last Updated: ${currentDate.toLocaleString()}`);
-  }, []);
+  // Removed initial lastUpdated useEffect - will be set when data loads
 
   // Load revenue and expenses data based on selected month
   useEffect(() => {
@@ -173,6 +178,19 @@ const Dashboard: React.FC = () => {
       setError(null);
 
       try {
+        // Fetch metadata to get the actual last modified date
+        // Add cache-busting parameter to ensure we get the latest metadata
+        try {
+          const metadataResponse = await fetch(`/gldet-metadata.json?t=${Date.now()}`);
+          if (metadataResponse.ok) {
+            const metadata = await metadataResponse.json();
+            const lastModifiedDate = new Date(metadata.lastModified);
+            setLastUpdated(`(v1.1) Last Updated: ${lastModifiedDate.toLocaleString()}`);
+          }
+        } catch (metadataError) {
+          console.log('Could not fetch metadata, will use fallback date');
+        }
+
         const response = await fetch('/gldet.json');
 
         if (!response.ok) {
@@ -195,6 +213,11 @@ const Dashboard: React.FC = () => {
         let priorRevenue = 0;
         let currentExpenses = 0;
         let priorExpenses = 0;
+        let inpatientRev = 0;
+        let outpatientRev = 0;
+        let swingBedRev = 0;
+        let pharmacyRev = 0;
+        const expensesBySubGroup: { [key: string]: number } = {};
 
         rawData.forEach(record => {
           const meValue = typeof record.ME === 'string' ? parseFloat(record.ME) : record.ME;
@@ -206,11 +229,23 @@ const Dashboard: React.FC = () => {
             if (isNaN(amount)) return;
 
             const majorGroup = record["FS_Major_Group"];
+            const subGroup = record["FS_Sub_Group "];
 
             // Only include PATIENT REVENUE (exclude OTHER REVENUE)
             if (majorGroup === "PATIENT REVENUE") {
               if (meValue === currentMonthME) {
                 currentRevenue += -amount;
+
+                // Track revenue by type
+                if (subGroup === "Inpatient Revenue") {
+                  inpatientRev += -amount;
+                } else if (subGroup === "Outpatient Revenue") {
+                  outpatientRev += -amount;
+                } else if (subGroup === "Swing Bed Revenue") {
+                  swingBedRev += -amount;
+                } else if (subGroup === "Retail Pharmacy Revenue") {
+                  pharmacyRev += -amount;
+                }
               } else if (meValue === priorMonthME) {
                 priorRevenue += -amount;
               }
@@ -219,6 +254,14 @@ const Dashboard: React.FC = () => {
             else if (majorGroup === "OPERATING EXPENSES") {
               if (meValue === currentMonthME) {
                 currentExpenses += amount;
+
+                // Track expenses by sub-group
+                if (subGroup) {
+                  if (!expensesBySubGroup[subGroup]) {
+                    expensesBySubGroup[subGroup] = 0;
+                  }
+                  expensesBySubGroup[subGroup] += amount;
+                }
               } else if (meValue === priorMonthME) {
                 priorExpenses += amount;
               }
@@ -230,6 +273,47 @@ const Dashboard: React.FC = () => {
         setLastMonthRevenue(priorRevenue);
         setTotalExpenses(currentExpenses);
         setLastMonthExpenses(priorExpenses);
+
+        // Update revenue by type with percentages
+        const totalPatientRev = inpatientRev + outpatientRev + swingBedRev + pharmacyRev;
+        setRevenueByType([
+          {
+            name: 'Inpatient',
+            value: inpatientRev,
+            percentage: totalPatientRev > 0 ? (inpatientRev / totalPatientRev) * 100 : 0,
+            color: '#1abc9c'
+          },
+          {
+            name: 'Outpatient',
+            value: outpatientRev,
+            percentage: totalPatientRev > 0 ? (outpatientRev / totalPatientRev) * 100 : 0,
+            color: '#3498db'
+          },
+          {
+            name: 'Swing Bed',
+            value: swingBedRev,
+            percentage: totalPatientRev > 0 ? (swingBedRev / totalPatientRev) * 100 : 0,
+            color: '#e74c3c'
+          },
+          {
+            name: 'Retail Pharmacy',
+            value: pharmacyRev,
+            percentage: totalPatientRev > 0 ? (pharmacyRev / totalPatientRev) * 100 : 0,
+            color: '#f39c12'
+          }
+        ]);
+
+        // Update expense by type with percentages
+        const expenseColors = ['#f39c12', '#9b59b6', '#95a5a6', '#e74c3c', '#3498db', '#1abc9c', '#34495e', '#e67e22'];
+        const expenseArray = Object.entries(expensesBySubGroup)
+          .map(([name, value], index) => ({
+            name,
+            value,
+            percentage: currentExpenses > 0 ? (value / currentExpenses) * 100 : 0,
+            color: expenseColors[index % expenseColors.length]
+          }))
+          .sort((a, b) => b.value - a.value); // Sort by value descending
+        setExpenseByType(expenseArray);
         setRetryCount(0);
         setIsLoadingData(false);
       } catch (error) {
@@ -309,19 +393,20 @@ const Dashboard: React.FC = () => {
     loadTrendData();
   }, [selectedMonth]);
 
-  // Revenue data for the chart
-  const revenueData = [
-    { name: 'IP Revenue', value: 28500000, percentage: 53.7, color: '#1abc9c' },
-    { name: 'OP Revenue', value: 19200000, percentage: 36.2, color: '#3498db' },
-    { name: 'SB Revenue', value: 5400000, percentage: 10.1, color: '#e74c3c' }
-  ];
+  // Scroll to top when fullscreen chart is opened
+  useEffect(() => {
+    if (fullScreenChart) {
+      // Find the .content container and scroll it to top
+      const contentElement = document.querySelector('.content');
+      if (contentElement) {
+        contentElement.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+      // Also scroll window as fallback
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [fullScreenChart]);
 
-  // Expense data for the pie chart
-  const expenseData = [
-    { name: 'Payroll', value: 28500000, percentage: 58.2, color: '#f39c12' },
-    { name: 'Non-Payroll', value: 18900000, percentage: 38.6, color: '#9b59b6' },
-    { name: 'Depreciation', value: 1600000, percentage: 3.2, color: '#95a5a6' }
-  ];
+  // Revenue and expense data now comes from state (revenueByType and expenseByType)
 
   // Department admissions data for the current month
   const departmentAdmissionsData = [
@@ -376,6 +461,10 @@ const Dashboard: React.FC = () => {
 
   const formatTooltip = (value: number, name: string) => {
     return [`$${(value / 1000000).toFixed(1)}M`, name];
+  };
+
+  const formatTooltipThousands = (value: number, name: string) => {
+    return [`$${(value / 1000).toFixed(0)}K`, name];
   };
 
   const handleRetry = () => {
@@ -437,14 +526,14 @@ const Dashboard: React.FC = () => {
 
     // Add revenue breakdown
     excelData.push({ Section: 'Revenue by Type', Value: '', Change: '' });
-    revenueData.forEach(item => {
+    revenueByType.forEach(item => {
       excelData.push({ Section: item.name, Value: item.value, Change: `${item.percentage.toFixed(1)}%` });
     });
     excelData.push({ Section: '', Value: '', Change: '' }); // Empty row
 
     // Add expense breakdown
     excelData.push({ Section: 'Operating Expenses by Type', Value: '', Change: '' });
-    expenseData.forEach(item => {
+    expenseByType.forEach(item => {
       excelData.push({ Section: item.name, Value: item.value, Change: `${item.percentage.toFixed(1)}%` });
     });
     excelData.push({ Section: '', Value: '', Change: '' }); // Empty row
@@ -591,7 +680,7 @@ const Dashboard: React.FC = () => {
     doc.text('Revenue by Type', 14, currentY);
     currentY += 5;
 
-    const revenueBreakdownData = revenueData.map(item => [
+    const revenueBreakdownData = revenueByType.map(item => [
       item.name,
       `$${item.value.toLocaleString()}`,
       `${item.percentage.toFixed(1)}%`
@@ -618,7 +707,7 @@ const Dashboard: React.FC = () => {
     doc.text('Operating Expenses by Type', 14, currentY);
     currentY += 5;
 
-    const expenseBreakdownData = expenseData.map(item => [
+    const expenseBreakdownData = expenseByType.map(item => [
       item.name,
       `$${item.value.toLocaleString()}`,
       `${item.percentage.toFixed(1)}%`
@@ -2250,7 +2339,7 @@ const Dashboard: React.FC = () => {
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                 <XAxis dataKey="month" />
                 <YAxis tickFormatter={formatCurrencyM} />
-                <Tooltip formatter={formatTooltip} />
+                <Tooltip formatter={formatTooltipThousands} />
                 <Legend />
                 <Area
                   type="monotone"
@@ -2282,14 +2371,24 @@ const Dashboard: React.FC = () => {
 
       <div className="cards-container third-row">
         <div className="card revenue-chart-card">
-          <h2>Revenue by Type</h2>
+          <div className="chart-header">
+            <h2>Revenue by Type</h2>
+            <button
+              className="expand-button"
+              onClick={() => setFullScreenChart('Revenue by Type')}
+              aria-label="Expand chart to full screen"
+              title="View full screen"
+            >
+              <span className="material-icons">fullscreen</span>
+            </button>
+          </div>
           <div className="chart-container">
             <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={revenueData}>
+              <BarChart data={revenueByType}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                 <XAxis dataKey="name" />
                 <YAxis tickFormatter={formatCurrencyM} />
-                <Tooltip formatter={formatTooltip} />
+                <Tooltip formatter={formatTooltipThousands} />
                 <Bar
                   dataKey="value"
                   fill="#1abc9c"
@@ -2300,35 +2399,43 @@ const Dashboard: React.FC = () => {
               </BarChart>
             </ResponsiveContainer>
             <div className="chart-total">
-              <strong>Total: {formatCurrencyM(revenueData.reduce((sum, item) => sum + item.value, 0))}</strong>
+              <strong>Total: {formatCurrencyM(revenueByType.reduce((sum, item) => sum + item.value, 0))}</strong>
             </div>
           </div>
         </div>
 
         <div className="card expenses-chart-card">
-          <h2>Operating Expenses by Type</h2>
+          <div className="chart-header">
+            <h2>Operating Expenses by Type</h2>
+            <button
+              className="expand-button"
+              onClick={() => setFullScreenChart('Operating Expenses by Type')}
+              aria-label="Expand chart to full screen"
+              title="View full screen"
+            >
+              <span className="material-icons">fullscreen</span>
+            </button>
+          </div>
           <div className="chart-container">
             <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={expenseData}
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={80}
+              <BarChart data={expenseByType}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                <XAxis dataKey="name" angle={-45} textAnchor="end" height={100} />
+                <YAxis tickFormatter={formatCurrencyM} />
+                <Tooltip formatter={formatTooltipThousands} />
+                <Bar
                   dataKey="value"
-                  label={({ name, percentage }) => `${name}: ${percentage}%`}
                   animationDuration={1000}
                   animationEasing="ease-out"
                 >
-                  {expenseData.map((entry, index) => (
+                  {expenseByType.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
-                </Pie>
-                <Tooltip formatter={formatTooltip} />
-              </PieChart>
+                </Bar>
+              </BarChart>
             </ResponsiveContainer>
             <div className="chart-total">
-              <strong>Total: {formatCurrencyM(expenseData.reduce((sum, item) => sum + item.value, 0))}</strong>
+              <strong>Total: {formatCurrencyM(expenseByType.reduce((sum, item) => sum + item.value, 0))}</strong>
             </div>
           </div>
         </div>
@@ -2336,14 +2443,24 @@ const Dashboard: React.FC = () => {
 
       <div className="cards-container fourth-row">
         <div className="card trend-chart-card" style={{ width: '100%' }}>
-          <h2>Monthly Financial Performance Trend</h2>
+          <div className="chart-header">
+            <h2>Monthly Financial Performance Trend</h2>
+            <button
+              className="expand-button"
+              onClick={() => setFullScreenChart('Monthly Financial Performance Trend')}
+              aria-label="Expand chart to full screen"
+              title="View full screen"
+            >
+              <span className="material-icons">fullscreen</span>
+            </button>
+          </div>
           <div className="chart-container">
             <ResponsiveContainer width="100%" height={350}>
               <LineChart data={monthlyTrendData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                 <XAxis dataKey="month" />
                 <YAxis tickFormatter={formatCurrencyM} />
-                <Tooltip formatter={formatTooltip} />
+                <Tooltip formatter={formatTooltipThousands} />
                 <Legend />
                 <Line
                   type="monotone"
@@ -2380,6 +2497,97 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Full-screen chart overlay */}
+      {fullScreenChart && (
+        <div
+          className="fullscreen-overlay"
+          onClick={() => setFullScreenChart(null)}
+        >
+          <div
+            className="fullscreen-content"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="fullscreen-header">
+              <h2>{fullScreenChart}</h2>
+              <button
+                className="fullscreen-close"
+                onClick={() => setFullScreenChart(null)}
+                aria-label="Close full-screen view"
+              >
+                <span className="material-icons">close</span>
+              </button>
+            </div>
+            <div className="fullscreen-chart">
+              {fullScreenChart === 'Revenue by Type' && (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={revenueByType}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                    <XAxis dataKey="name" />
+                    <YAxis tickFormatter={formatCurrencyM} />
+                    <Tooltip formatter={formatTooltipThousands} />
+                    <Bar
+                      dataKey="value"
+                      fill="#1abc9c"
+                      radius={[4, 4, 0, 0]}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
+              {fullScreenChart === 'Operating Expenses by Type' && (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={expenseByType}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                    <XAxis dataKey="name" angle={-45} textAnchor="end" height={120} />
+                    <YAxis tickFormatter={formatCurrencyM} />
+                    <Tooltip formatter={formatTooltipThousands} />
+                    <Bar dataKey="value">
+                      {expenseByType.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
+              {fullScreenChart === 'Monthly Financial Performance Trend' && (
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={monthlyTrendData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                    <XAxis dataKey="month" />
+                    <YAxis tickFormatter={formatCurrencyM} />
+                    <Tooltip formatter={formatTooltipThousands} />
+                    <Legend />
+                    <Line
+                      type="monotone"
+                      dataKey="revenue"
+                      stroke="#1abc9c"
+                      strokeWidth={3}
+                      dot={{ fill: '#1abc9c', strokeWidth: 2, r: 4 }}
+                      name="Total Revenue"
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="expenses"
+                      stroke="#e74c3c"
+                      strokeWidth={3}
+                      dot={{ fill: '#e74c3c', strokeWidth: 2, r: 4 }}
+                      name="Total Expenses"
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="netPosition"
+                      stroke="#f39c12"
+                      strokeWidth={3}
+                      dot={{ fill: '#f39c12', strokeWidth: 2, r: 4 }}
+                      name="Net Position"
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 };

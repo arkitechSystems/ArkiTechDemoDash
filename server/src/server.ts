@@ -19,7 +19,26 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-this-in-pro
 const USE_HTTPS = process.env.USE_HTTPS === 'true';
 
 // Middleware
-app.use(cors());
+const allowedOrigins = [
+  'http://localhost:3000',
+  'https://localhost:3000',
+  'https://connect301.arkitech-test.xyz',
+  'https://cchddash-frontend.onrender.com'
+];
+
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps or curl)
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true
+}));
 app.use(express.json());
 
 // Request logging middleware

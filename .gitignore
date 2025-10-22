@@ -5,3 +5,5 @@ build/
 server/.env
 server/database.sqlite
 server/dist/
+server/certs/
+*.pem

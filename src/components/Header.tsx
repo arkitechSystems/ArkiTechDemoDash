@@ -13,6 +13,8 @@ interface HeaderProps {
   currentPage?: PageType;
   onPageChange?: (page: PageType) => void;
   onCollapseSidebar?: () => void;
+  currentView?: 'dashboard' | 'accounting';
+  onViewChange?: (view: 'dashboard' | 'accounting') => void;
 }
 
 interface Notification {
@@ -23,11 +25,12 @@ interface Notification {
   isRead: boolean;
 }
 
-const Header: React.FC<HeaderProps> = ({ currentPage, onPageChange, onCollapseSidebar }) => {
+const Header: React.FC<HeaderProps> = ({ currentPage, onPageChange, onCollapseSidebar, currentView = 'dashboard', onViewChange }) => {
   const { logout, username } = useAuth();
   const userName = username || "Current User";
   const userTitle = "CFO";
   const [searchQuery, setSearchQuery] = useState('');
+  const [lastRefreshDate, setLastRefreshDate] = useState<string>('Loading...');
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [showResults, setShowResults] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -142,6 +145,39 @@ const Header: React.FC<HeaderProps> = ({ currentPage, onPageChange, onCollapseSi
     };
   }, []);
 
+  // Fetch metadata to get the last refresh date
+  useEffect(() => {
+    const fetchMetadata = async () => {
+      try {
+        const response = await fetch(`/gldet-metadata.json?t=${Date.now()}`);
+        if (response.ok) {
+          const metadata = await response.json();
+          const lastModifiedDate = new Date(metadata.lastModified);
+          setLastRefreshDate(lastModifiedDate.toLocaleString('en-US', {
+            month: '2-digit',
+            day: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true
+          }));
+        } else {
+          setLastRefreshDate('10/13/2025 04:43PM');
+        }
+      } catch (error) {
+        console.error('Error fetching metadata:', error);
+        setLastRefreshDate('10/13/2025 04:43PM');
+      }
+    };
+
+    fetchMetadata();
+
+    // Refresh metadata every 30 seconds to catch updates
+    const interval = setInterval(fetchMetadata, 30000);
+
+    return () => clearInterval(interval);
+  }, []);
+
   // Close notifications when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -254,7 +290,7 @@ const Header: React.FC<HeaderProps> = ({ currentPage, onPageChange, onCollapseSi
             marginRight: '15px',
             fontStyle: 'italic'
           }}>
-            Last Refresh Date: 10/13/2025 04:43PM
+            Last Refresh Date: {lastRefreshDate}
           </span>
           <span className="header-date">
             {new Date().toLocaleDateString('en-US', {
@@ -470,6 +506,13 @@ const Header: React.FC<HeaderProps> = ({ currentPage, onPageChange, onCollapseSi
               </div>
             </div>
             <div className="user-dropdown">
+              <div
+                className="dropdown-item"
+                onClick={() => onViewChange?.(currentView === 'dashboard' ? 'accounting' : 'dashboard')}
+              >
+                <span className="material-icons">swap_horiz</span>
+                <span>{currentView === 'dashboard' ? 'Accounting View' : 'Dashboard View'}</span>
+              </div>
               <div className="dropdown-item" onClick={handleMyAccount}>
                 <span className="material-icons">person</span>
                 <span>My Account</span>
