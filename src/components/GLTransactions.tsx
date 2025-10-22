@@ -106,7 +106,27 @@ const GLTransactions: React.FC = () => {
         setLoading(true);
         setError(null);
 
-        const response = await fetch('/gldet.json');
+        // Fetch from protected API endpoint with authentication
+        const token = localStorage.getItem('authToken');
+
+        if (!token) {
+          throw new Error('Authentication required. Please log in.');
+        }
+
+        const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:3001'}/api/gl-data`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (response.status === 401) {
+          throw new Error('Session expired. Please log in again.');
+        }
+
+        if (response.status === 403) {
+          throw new Error('Access denied. You do not have permission to view GL data.');
+        }
 
         if (!response.ok) {
           throw new Error(`Failed to load data: ${response.status} ${response.statusText}`);

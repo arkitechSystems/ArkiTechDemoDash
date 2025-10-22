@@ -735,6 +735,79 @@ app.post('/api/tickets/submit', authMiddleware, async (req: Request, res: Respon
   }
 });
 
+// Protected GL Data endpoint - Requires authentication
+app.get('/api/gl-data', authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const decoded = (req as any).user;
+
+    // Check if user has appropriate role (dashboard, both, or admin)
+    const user = await findUserByUsername(decoded.username);
+
+    if (!user) {
+      return res.status(403).json({ error: 'User not found' });
+    }
+
+    // Check role-based access
+    const allowedRoles = ['dashboard', 'both', 'admin'];
+    if (!allowedRoles.includes(user.role)) {
+      await logAudit({
+        userId: decoded.id,
+        username: decoded.username,
+        eventType: AuditEventType.UNAUTHORIZED_ACCESS,
+        eventCategory: AuditCategory.SECURITY,
+        description: 'Attempted to access GL data without proper role',
+        status: AuditStatus.FAILURE,
+        ipAddress: getClientIP(req),
+        userAgent: req.headers['user-agent'],
+        metadata: { userRole: user.role, requiredRoles: allowedRoles }
+      });
+
+      return res.status(403).json({ error: 'Access denied. Insufficient permissions.' });
+    }
+
+    // Read GL data from server-side file
+    const glDataPath = path.join(__dirname, '..', 'data', 'gldet.json');
+
+    if (!fs.existsSync(glDataPath)) {
+      console.error('GL data file not found at:', glDataPath);
+      return res.status(500).json({ error: 'GL data file not found' });
+    }
+
+    const glData = JSON.parse(fs.readFileSync(glDataPath, 'utf-8'));
+
+    // Log successful access
+    await logAudit({
+      userId: decoded.id,
+      username: decoded.username,
+      eventType: AuditEventType.DATA_ACCESS,
+      eventCategory: AuditCategory.SYSTEM,
+      description: 'Accessed GL transaction data',
+      status: AuditStatus.SUCCESS,
+      ipAddress: getClientIP(req),
+      userAgent: req.headers['user-agent'],
+      metadata: { dataType: 'GL_TRANSACTIONS', recordCount: glData.length }
+    });
+
+    res.json(glData);
+  } catch (error) {
+    console.error('GL data access error:', error);
+    const decoded = (req as any).user;
+
+    await logAudit({
+      userId: decoded?.id,
+      username: decoded?.username,
+      eventType: AuditEventType.SYSTEM_ERROR,
+      eventCategory: AuditCategory.SYSTEM,
+      description: 'Failed to access GL data',
+      status: AuditStatus.FAILURE,
+      ipAddress: getClientIP(req),
+      userAgent: req.headers['user-agent']
+    });
+
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // Initialize database and start server
 const startServer = async () => {
   try {

@@ -7,3 +7,7 @@ server/database.sqlite
 server/dist/
 server/certs/
 *.pem
+
+# GL Data - Should not be in public folder (security risk)
+# Data is served from protected API endpoint
+public/gldet.json
