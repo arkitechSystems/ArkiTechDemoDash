@@ -82,7 +82,13 @@ const GLTransactions: React.FC = () => {
     { value: '2025-06', label: 'June 2025', meValue: 45838, fiscalYear: 2025 },
     { value: '2025-07', label: 'July 2025', meValue: 45869, fiscalYear: 2025 },
     { value: '2025-08', label: 'August 2025', meValue: 45900, fiscalYear: 2025 },
-    { value: '2025-09', label: 'September 2025', meValue: 45930, fiscalYear: 2025 }
+    { value: '2025-09', label: 'September 2025', meValue: 45930, fiscalYear: 2025 },
+    { value: '2025-10', label: 'October 2025', meValue: 45961, fiscalYear: 2026 },
+    { value: '2025-11', label: 'November 2025', meValue: 45991, fiscalYear: 2026 },
+    { value: '2025-12', label: 'December 2025', meValue: 46022, fiscalYear: 2026 },
+    { value: '2026-01', label: 'January 2026', meValue: 46053, fiscalYear: 2026 },
+    { value: '2026-02', label: 'February 2026', meValue: 46081, fiscalYear: 2026 },
+    { value: '2026-03', label: 'March 2026', meValue: 46112, fiscalYear: 2026 }
   ];
 
   // Filter months based on selected fiscal year and add "All Months" option
@@ -106,27 +112,8 @@ const GLTransactions: React.FC = () => {
         setLoading(true);
         setError(null);
 
-        // Fetch from protected API endpoint with authentication
-        const token = localStorage.getItem('authToken');
-
-        if (!token) {
-          throw new Error('Authentication required. Please log in.');
-        }
-
-        const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:3001'}/api/gl-data`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        });
-
-        if (response.status === 401) {
-          throw new Error('Session expired. Please log in again.');
-        }
-
-        if (response.status === 403) {
-          throw new Error('Access denied. You do not have permission to view GL data.');
-        }
+        // Fetch GL data from public file
+        const response = await fetch('/gldet.json');
 
         if (!response.ok) {
           throw new Error(`Failed to load data: ${response.status} ${response.statusText}`);

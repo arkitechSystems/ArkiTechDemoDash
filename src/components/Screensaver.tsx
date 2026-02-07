@@ -1,25 +1,44 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { useAuth } from '../contexts/AuthContext';
 import './Login.css';
 import './Screensaver.css';
 
 interface ScreensaverProps {
   onDismiss: () => void;
-  timeRemaining: number; // seconds until auto-logout
 }
 
-const Screensaver: React.FC<ScreensaverProps> = ({ onDismiss, timeRemaining }) => {
-  const minutes = Math.floor(timeRemaining / 60);
-  const seconds = timeRemaining % 60;
+const Screensaver: React.FC<ScreensaverProps> = ({ onDismiss }) => {
+  const { username, unlock } = useAuth();
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   const arkiTechLogo = '/ArkiTech.png';
 
-  // Handle click anywhere to dismiss
-  const handleClick = (e: React.MouseEvent) => {
-    onDismiss();
+  const handleUnlock = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setIsLoading(true);
+
+    try {
+      const result = await unlock(password);
+
+      if (result.success) {
+        setPassword('');
+        // Screen will automatically dismiss via AuthContext
+      } else {
+        setError(result.error || 'Invalid password');
+        setPassword('');
+      }
+    } catch (err) {
+      setError('An error occurred. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
-    <div className="login-container screensaver-fullscreen" onClick={handleClick}>
+    <div className="login-container screensaver-fullscreen">
       <div className="login-wrapper">
         {/* Logo/Brand Section - Exactly like Login */}
         <div className="login-brand">
@@ -34,8 +53,7 @@ const Screensaver: React.FC<ScreensaverProps> = ({ onDismiss, timeRemaining }) =
         <div className="glass-card">
           <h2 className="card-title">Screen Locked</h2>
 
-          <div style={{
-            textAlign: 'center',
+          <form onSubmit={handleUnlock} style={{
             position: 'relative',
             zIndex: 1,
             width: '100%',
@@ -47,52 +65,64 @@ const Screensaver: React.FC<ScreensaverProps> = ({ onDismiss, timeRemaining }) =
               fontSize: '1.125rem',
               color: '#0f2027',
               margin: 0,
-              fontWeight: 500
+              fontWeight: 500,
+              textAlign: 'center'
             }}>
-              Logged in as: <strong>{localStorage.getItem('username')}</strong>
+              Logged in as: <strong>{username}</strong>
             </p>
-
-            <div style={{
-              padding: '1rem',
-              background: 'rgba(26, 188, 156, 0.1)',
-              borderRadius: '12px',
-              border: '1px solid rgba(26, 188, 156, 0.3)'
-            }}>
-              {timeRemaining > 0 ? (
-                <p style={{
-                  margin: 0,
-                  color: '#1abc9c',
-                  fontSize: '0.875rem',
-                  fontWeight: 500
-                }}>
-                  Session will expire in {minutes}:{seconds.toString().padStart(2, '0')}
-                  <br />
-                  <small style={{ fontSize: '0.75rem', opacity: 0.8 }}>
-                    You will be logged out automatically
-                  </small>
-                </p>
-              ) : (
-                <p style={{
-                  margin: 0,
-                  color: '#dc3545',
-                  fontSize: '0.875rem',
-                  fontWeight: 600
-                }}>
-                  Session expired - Logging out...
-                </p>
-              )}
-            </div>
 
             <p style={{
               fontSize: '0.875rem',
               color: '#666',
-              opacity: 0.7,
               margin: 0,
-              animation: 'fadeInOut 2s ease-in-out infinite'
+              textAlign: 'center'
             }}>
-              Click anywhere to resume
+              Enter your password to unlock
             </p>
-          </div>
+
+            {error && (
+              <div style={{
+                padding: '0.75rem',
+                background: 'rgba(220, 53, 69, 0.1)',
+                borderRadius: '8px',
+                border: '1px solid rgba(220, 53, 69, 0.3)',
+                textAlign: 'center'
+              }}>
+                <p style={{
+                  margin: 0,
+                  color: '#000',
+                  fontSize: '0.875rem',
+                  fontWeight: 500
+                }}>
+                  {error}
+                </p>
+              </div>
+            )}
+
+            <div className="input-group">
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="login-input"
+                autoFocus
+                disabled={isLoading}
+              />
+              <label className="login-label">Password</label>
+            </div>
+
+            <button
+              type="submit"
+              className="login-button"
+              disabled={isLoading || !password}
+            >
+              {isLoading ? (
+                <div className="loading-spinner"></div>
+              ) : (
+                'Unlock'
+              )}
+            </button>
+          </form>
         </div>
 
         {/* Footer - Exactly like Login */}

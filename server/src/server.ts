@@ -336,7 +336,7 @@ app.get('/api/auth/verify', async (req: Request, res: Response) => {
 });
 
 // Verify password endpoint (for screensaver unlock)
-app.post('/api/auth/verify-password', authMiddleware, async (req: Request, res: Response) => {
+app.post('/api/auth/verify-password', async (req: Request, res: Response) => {
   try {
     const { username, password } = req.body;
 
@@ -566,7 +566,7 @@ app.get('/api/mfa/status', async (req: Request, res: Response) => {
 });
 
 // Force password reset endpoint (for first login)
-app.post('/api/auth/reset-password-first-login', authMiddleware, async (req: Request, res: Response) => {
+app.post('/api/auth/reset-password-first-login', async (req: Request, res: Response) => {
   try {
     const { newPassword, confirmPassword } = req.body;
     const decoded = (req as any).user;
@@ -606,7 +606,7 @@ app.post('/api/auth/reset-password-first-login', authMiddleware, async (req: Req
 });
 
 // Complete first login setup (after password reset and MFA setup)
-app.post('/api/auth/complete-first-login', authMiddleware, async (req: Request, res: Response) => {
+app.post('/api/auth/complete-first-login', async (req: Request, res: Response) => {
   try {
     const decoded = (req as any).user;
 
@@ -631,8 +631,8 @@ app.post('/api/auth/complete-first-login', authMiddleware, async (req: Request, 
   }
 });
 
-// Update user role endpoint (protected)
-app.put('/api/auth/update-role', authMiddleware, async (req: Request, res: Response) => {
+// Update user role endpoint
+app.put('/api/auth/update-role', async (req: Request, res: Response) => {
   try {
     const { userId, role } = req.body;
     const requestingUser = (req as any).user;
@@ -678,7 +678,7 @@ app.put('/api/auth/update-role', authMiddleware, async (req: Request, res: Respo
 });
 
 // Submit support ticket endpoint
-app.post('/api/tickets/submit', authMiddleware, async (req: Request, res: Response) => {
+app.post('/api/tickets/submit', async (req: Request, res: Response) => {
   try {
     const { ticketNumber, subject, message } = req.body;
     const decoded = (req as any).user;
@@ -735,36 +735,9 @@ app.post('/api/tickets/submit', authMiddleware, async (req: Request, res: Respon
   }
 });
 
-// Protected GL Data endpoint - Requires authentication
-app.get('/api/gl-data', authMiddleware, async (req: Request, res: Response) => {
+// GL Data endpoint - No authentication required
+app.get('/api/gl-data', async (req: Request, res: Response) => {
   try {
-    const decoded = (req as any).user;
-
-    // Check if user has appropriate role (dashboard, both, or admin)
-    const user = await findUserByUsername(decoded.username);
-
-    if (!user) {
-      return res.status(403).json({ error: 'User not found' });
-    }
-
-    // Check role-based access
-    const allowedRoles = ['dashboard', 'both', 'admin'];
-    if (!allowedRoles.includes(user.role)) {
-      await logAudit({
-        userId: decoded.id,
-        username: decoded.username,
-        eventType: AuditEventType.UNAUTHORIZED_ACCESS,
-        eventCategory: AuditCategory.SECURITY,
-        description: 'Attempted to access GL data without proper role',
-        status: AuditStatus.FAILURE,
-        ipAddress: getClientIP(req),
-        userAgent: req.headers['user-agent'],
-        metadata: { userRole: user.role, requiredRoles: allowedRoles }
-      });
-
-      return res.status(403).json({ error: 'Access denied. Insufficient permissions.' });
-    }
-
     // Read GL data from server-side file
     const glDataPath = path.join(__dirname, '..', 'data', 'gldet.json');
 
@@ -774,36 +747,9 @@ app.get('/api/gl-data', authMiddleware, async (req: Request, res: Response) => {
     }
 
     const glData = JSON.parse(fs.readFileSync(glDataPath, 'utf-8'));
-
-    // Log successful access
-    await logAudit({
-      userId: decoded.id,
-      username: decoded.username,
-      eventType: AuditEventType.DATA_ACCESS,
-      eventCategory: AuditCategory.SYSTEM,
-      description: 'Accessed GL transaction data',
-      status: AuditStatus.SUCCESS,
-      ipAddress: getClientIP(req),
-      userAgent: req.headers['user-agent'],
-      metadata: { dataType: 'GL_TRANSACTIONS', recordCount: glData.length }
-    });
-
     res.json(glData);
   } catch (error) {
     console.error('GL data access error:', error);
-    const decoded = (req as any).user;
-
-    await logAudit({
-      userId: decoded?.id,
-      username: decoded?.username,
-      eventType: AuditEventType.SYSTEM_ERROR,
-      eventCategory: AuditCategory.SYSTEM,
-      description: 'Failed to access GL data',
-      status: AuditStatus.FAILURE,
-      ipAddress: getClientIP(req),
-      userAgent: req.headers['user-agent']
-    });
-
     res.status(500).json({ error: 'Internal server error' });
   }
 });

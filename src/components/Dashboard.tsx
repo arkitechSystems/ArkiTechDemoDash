@@ -85,10 +85,10 @@ const useAnimatedNumber = (endValue: number, duration: number = 2000, startDelay
 
 const Dashboard: React.FC = () => {
   const { getDefaultMonth } = useSettings();
-  const [totalRevenue, setTotalRevenue] = useState<number>(53100000);
-  const [lastMonthRevenue, setLastMonthRevenue] = useState<number>(50400000);
-  const [totalExpenses, setTotalExpenses] = useState<number>(49000000);
-  const [lastMonthExpenses, setLastMonthExpenses] = useState<number>(47800000);
+  const [totalRevenue, setTotalRevenue] = useState<number>(0);
+  const [lastMonthRevenue, setLastMonthRevenue] = useState<number>(0);
+  const [totalExpenses, setTotalExpenses] = useState<number>(0);
+  const [lastMonthExpenses, setLastMonthExpenses] = useState<number>(0);
   const [lastUpdated, setLastUpdated] = useState<string>('');
   const [monthlyTrendData, setMonthlyTrendData] = useState<MonthlyTrendData[]>([]);
   const [selectedMonth, setSelectedMonth] = useState<string>(getDefaultMonth());
@@ -166,7 +166,13 @@ const Dashboard: React.FC = () => {
     { value: '2025-06', label: 'Jun 2025', meValue: 45838 },
     { value: '2025-07', label: 'Jul 2025', meValue: 45869 },
     { value: '2025-08', label: 'Aug 2025', meValue: 45900 },
-    { value: '2025-09', label: 'Sep 2025', meValue: 45930 }
+    { value: '2025-09', label: 'Sep 2025', meValue: 45930 },
+    { value: '2025-10', label: 'Oct 2025', meValue: 45961 },
+    { value: '2025-11', label: 'Nov 2025', meValue: 45991 },
+    { value: '2025-12', label: 'Dec 2025', meValue: 46022 },
+    { value: '2026-01', label: 'Jan 2026', meValue: 46053 },
+    { value: '2026-02', label: 'Feb 2026', meValue: 46081 },
+    { value: '2026-03', label: 'Mar 2026', meValue: 46112 }
   ];
 
   // Removed initial lastUpdated useEffect - will be set when data loads

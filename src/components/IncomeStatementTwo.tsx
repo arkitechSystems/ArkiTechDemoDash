@@ -73,7 +73,13 @@ const IncomeStatementTwo: React.FC = () => {
     { value: '2025-06', label: 'June 2025', meValue: 45838 },
     { value: '2025-07', label: 'July 2025', meValue: 45869 },
     { value: '2025-08', label: 'August 2025', meValue: 45900 },
-    { value: '2025-09', label: 'September 2025', meValue: 45930 }
+    { value: '2025-09', label: 'September 2025', meValue: 45930 },
+    { value: '2025-10', label: 'October 2025', meValue: 45961 },
+    { value: '2025-11', label: 'November 2025', meValue: 45991 },
+    { value: '2025-12', label: 'December 2025', meValue: 46022 },
+    { value: '2026-01', label: 'January 2026', meValue: 46053 },
+    { value: '2026-02', label: 'February 2026', meValue: 46081 },
+    { value: '2026-03', label: 'March 2026', meValue: 46112 }
   ];
 
   const formatAmount = (amount: number): string => {
