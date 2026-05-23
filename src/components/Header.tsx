@@ -242,7 +242,7 @@ const Header: React.FC<HeaderProps> = ({ currentPage, onPageChange, onCollapseSi
       <div className="header-content">
         <div className="header-left">
           <img
-            src="/ArkiTech.png"
+            src={`${process.env.PUBLIC_URL}/ArkiTech.png`}
             alt="ArkiTech Logo"
             className="header-logo"
             title="Developed by ArkiTech Systems © 2025"

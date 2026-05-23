@@ -23,8 +23,8 @@ interface SettingsProviderProps {
 }
 
 export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) => {
-  const [defaultMonth, setDefaultMonth] = useState<string>('2025-08');
-  const [isDynamic, setIsDynamic] = useState<boolean>(true);
+  const [defaultMonth, setDefaultMonth] = useState<string>('2026-03');
+  const [isDynamic, setIsDynamic] = useState<boolean>(false);
   const [dynamicDays, setDynamicDays] = useState<number>(15);
 
   // Load settings from localStorage on mount

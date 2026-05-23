@@ -209,7 +209,8 @@ const Dashboard: React.FC = () => {
           throw new Error('Invalid or empty data received');
         }
 
-        const selectedMonthIndex = availableMonths.findIndex(m => m.value === selectedMonth);
+        let selectedMonthIndex = availableMonths.findIndex(m => m.value === selectedMonth);
+        if (selectedMonthIndex === -1) selectedMonthIndex = availableMonths.length - 1;
         const priorMonthIndex = selectedMonthIndex > 0 ? selectedMonthIndex - 1 : 0;
 
         const currentMonthME = availableMonths[selectedMonthIndex].meValue;
