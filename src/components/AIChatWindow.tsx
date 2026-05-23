@@ -41,7 +41,7 @@ const AIChatWindow: React.FC<AIChatWindowProps> = ({ onClose }) => {
   useEffect(() => {
     const loadFinancialData = async () => {
       try {
-        const response = await fetch('/gldet.json');
+        const response = await fetch(`${process.env.PUBLIC_URL}/gldet.json`);
         const data = await response.json();
         setGldetData(data);
         console.log('Loaded financial data:', data.length, 'entries');

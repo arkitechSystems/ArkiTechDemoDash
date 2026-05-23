@@ -113,7 +113,7 @@ const GLTransactions: React.FC = () => {
         setError(null);
 
         // Fetch GL data from public file
-        const response = await fetch('/gldet.json');
+        const response = await fetch(`${process.env.PUBLIC_URL}/gldet.json`);
 
         if (!response.ok) {
           throw new Error(`Failed to load data: ${response.status} ${response.statusText}`);

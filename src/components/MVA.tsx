@@ -583,7 +583,7 @@ const MVA: React.FC = () => {
     const loadFinancialData = async () => {
       try {
         setLoading(true);
-        const response = await fetch('/gldet.json');
+        const response = await fetch(`${process.env.PUBLIC_URL}/gldet.json`);
         const rawData: GLRecord[] = await response.json();
 
         // Get unique subgroups for dropdown (exclude Type 1 and 2)

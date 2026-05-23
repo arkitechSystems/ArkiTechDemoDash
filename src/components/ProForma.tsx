@@ -95,7 +95,7 @@ const ProForma: React.FC = () => {
         setLoading(true);
         setError(null);
 
-        const response = await fetch('/gldet.json');
+        const response = await fetch(`${process.env.PUBLIC_URL}/gldet.json`);
 
         if (!response.ok) {
           throw new Error(`Failed to load data: ${response.status} ${response.statusText}`);

@@ -187,7 +187,7 @@ const Dashboard: React.FC = () => {
         // Fetch metadata to get the actual last modified date
         // Add cache-busting parameter to ensure we get the latest metadata
         try {
-          const metadataResponse = await fetch(`/gldet-metadata.json?t=${Date.now()}`);
+          const metadataResponse = await fetch(`${process.env.PUBLIC_URL}/gldet-metadata.json?t=${Date.now()}`);
           if (metadataResponse.ok) {
             const metadata = await metadataResponse.json();
             const lastModifiedDate = new Date(metadata.lastModified);
@@ -197,7 +197,7 @@ const Dashboard: React.FC = () => {
           console.log('Could not fetch metadata, will use fallback date');
         }
 
-        const response = await fetch('/gldet.json');
+        const response = await fetch(`${process.env.PUBLIC_URL}/gldet.json`);
 
         if (!response.ok) {
           throw new Error(`Failed to load data: ${response.status} ${response.statusText}`);
@@ -336,7 +336,7 @@ const Dashboard: React.FC = () => {
   useEffect(() => {
     const loadTrendData = async () => {
       try {
-        const response = await fetch('/gldet.json');
+        const response = await fetch(`${process.env.PUBLIC_URL}/gldet.json`);
 
         if (!response.ok) {
           throw new Error(`Failed to load trend data: ${response.status} ${response.statusText}`);

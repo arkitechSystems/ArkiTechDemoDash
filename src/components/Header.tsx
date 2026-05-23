@@ -149,7 +149,7 @@ const Header: React.FC<HeaderProps> = ({ currentPage, onPageChange, onCollapseSi
   useEffect(() => {
     const fetchMetadata = async () => {
       try {
-        const response = await fetch(`/gldet-metadata.json?t=${Date.now()}`);
+        const response = await fetch(`${process.env.PUBLIC_URL}/gldet-metadata.json?t=${Date.now()}`);
         if (response.ok) {
           const metadata = await response.json();
           const lastModifiedDate = new Date(metadata.lastModified);

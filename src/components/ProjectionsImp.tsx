@@ -217,7 +217,7 @@ const ProjectionsImp: React.FC = () => {
         }
 
         console.log('Processing new data for month:', selectedEndMonth);
-        const response = await fetch('/gldet.json');
+        const response = await fetch(`${process.env.PUBLIC_URL}/gldet.json`);
         const rawData: GLRecord[] = await response.json();
 
         // Get the date range - from first available month to selected end month
